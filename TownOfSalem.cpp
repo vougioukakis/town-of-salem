@@ -1,11 +1,10 @@
-//#include "std_lib_facilities.h"
+// #include "std_lib_facilities.h"
 #include "round.h"
 #include "player.h"
 
 // global variables
 vector<int> repeatVoteIDs;
-player p1, p2, p3, p4, p5, p6, p7;
-vector<player> obj_players = {p1, p2, p3, p4, p5, p6, p7};
+vector<player *> obj_players = {};
 int killedNum = 0;
 int savedNum = 0;
 int gangNum = 0;
@@ -17,27 +16,17 @@ string gangster;
 string last_killed = "";
 string last_voted = "";
 string last_left = "nobody has left the game yet";
-vector<GameRound*> roundsList = {};
+vector<GameRound *> roundsList = {};
 
 // functions
-void createPlayers()
-{
-    for (int i = 0; i <= 6; i++)
-    {   
-        obj_players[i].setID(i);
-        obj_players[i].setAlive(true);
-        obj_players[i].setCurrentVotes(0);
-    }
-}
-
 void outputLog()
 {
     ofstream log("TownOfSalem_output.txt");
 
     for (int i = 0; i < roundsList.size(); i++)
     {
-        log << "- Round " << roundsList[i]->getRoundNum() << "\n   " 
-            << roundsList[i]->getLeftGangster() << " was killed by the gangster\n   " 
+        log << "- Round " << roundsList[i]->getRoundNum() << "\n   "
+            << roundsList[i]->getLeftGangster() << " was killed by the gangster\n   "
             << roundsList[i]->getLeftVote() << " was voted out" << endl;
     }
 
@@ -46,22 +35,22 @@ void outputLog()
 
 void playersInGame()
 {
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        if (obj_players[i].getAlive() == true)
+        if (obj_players[i]->getAlive() == true)
         {
-            cout << obj_players[i].getName() << endl;
+            cout << obj_players[i]->getName() << endl;
         }
     }
 }
 
 void playersInGameRoles()
 {
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        if (obj_players[i].getAlive() == true)
+        if (obj_players[i]->getAlive() == true)
         {
-            cout << obj_players[i].getName() << ": " << obj_players[i].getRole() << endl;
+            cout << obj_players[i]->getName() << ": " << obj_players[i]->getRole() << endl;
         }
     }
 }
@@ -70,12 +59,12 @@ void playersNotInGame()
 {
     bool nobodyHasLeft = true;
 
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        if (obj_players[i].getAlive() == false)
-        {   
+        if (obj_players[i]->getAlive() == false)
+        {
             nobodyHasLeft = false;
-            cout << obj_players[i].getName() << endl;
+            cout << obj_players[i]->getName() << endl;
         }
     }
 
@@ -87,88 +76,95 @@ void playersNotInGame()
 
 void changePlayerStatus(int index)
 {
-    obj_players[index].setAlive(false);
-    cout << obj_players[index].getName() << " leaves the game." << endl;
+    obj_players[index]->setAlive(false);
+    cout << obj_players[index]->getName() << " leaves the game." << endl;
 }
 
 void resetAllCurrentVotes()
 {
-    for (int i = 0; i <= 6; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        obj_players[i].setCurrentVotes(0);
+        obj_players[i]->setCurrentVotes(0);
     }
 }
 
 void initialize()
-{   
-    // open file
+{
     ifstream infile("../players.txt");
     if (!infile.is_open())
     {
-        //cout << "could not open file players.txt. Trying again..." << endl;
+        cout << "could not open file players.txt." << endl;
         infile.clear();
-        ifstream infile("players.txt");
-        if (!infile.is_open())
-        {
-            cout << "Error: could not open file players.txt.\nMake sure players.txt is in the same directory as the executable or one dir up. " << endl;
-            exit(1);
-            
-        }
-        else 
-        {
-            string name;
-            string role;
-            for (int i = 0; i <= 6; i++) 
-            { 
-                // read each line of the file
-                infile >> name >> role;
-                obj_players[i].setName(name); obj_players[i].setRole(role);
-                cout << "Player " << i << ": " << name << " - " << role << endl;
-                if (role == "doctor")
-                {
-                    doctor = obj_players[i].getName();
-                }
-                if (role == "gangster")
-                {
-                    gangster = obj_players[i].getName();
-                }
-            }
-            infile.close(); // close the input file
-        }
+        exit(1);
     }
-    else 
+    else
     {
         string name;
-        string role;
-        for (int i = 0; i <= 6; i++) 
-        { 
-            // read each line of the file
-            infile >> name >> role;
-            obj_players[i].setName(name); obj_players[i].setRole(role);
-            cout << "Player " << i << ": " << name << " - " << role << endl;
-            if (role == "doctor")
-            {
-                doctor = obj_players[i].getName();
-            }
-            if (role == "gangster")
-            {
-                gangster = obj_players[i].getName();
-            }
+        string role = "citizen";
+        int i = 0;
+        while (infile >> name)
+        {
+            player *Player = new player(i, name, true, role);
+            Player->setCurrentVotes(0);
+            obj_players.push_back(Player);
+            i++;
         }
-        infile.close(); // close the input file
+        infile.close();
+    }
+    int docNum = -1;
+    int gangNum = -1;
+
+    while (docNum - gangNum == 0)
+    {
+        docNum = rand() % obj_players.size();
+        gangNum = rand() % obj_players.size();
     }
 
-    cout << "\nthe doctor is " << doctor << '\n';
-    cout << "the gangster is " << gangster << '\n';
+    obj_players[docNum]->setRole("doctor");
+    obj_players[gangNum]->setRole("gangster");
+
+    for (int i = 0; i < obj_players.size(); i++)
+    {
+        if (obj_players[i]->getRole() == "doctor")
+        {
+            doctor = obj_players[i]->getName();
+        }
+        if (obj_players[i]->getRole() == "gangster")
+        {
+            gangster = obj_players[i]->getName();
+        }
+    }
+
+    for (int i = 0; i < obj_players.size(); i++)
+    {
+        cout << "Player " << i << ": " << obj_players[i]->getName() << " - " << obj_players[i]->getRole() << endl;
+    }
+
+    cout << "the doctor is " << doctor << endl;
+    cout << "the gangster is " << gangster << endl;
 }
 
+void showVoteTable()
+{
+    cout << "\n----------------------------------\nPLAYER NAME : VOTES" << endl;
+    for (int k = 0; k < obj_players.size(); k++)
+    {
+        if (obj_players[k]->getAlive() == true)
+        {
+            cout << "   " << obj_players[k]->getName() << " : "
+                 << obj_players[k]->getCurrentVotes() << endl;
+        }
+    }
+    cout << "\n----------------------------------\n"
+         << endl;
+
+}
 void checkEndCondition()
 {
-    // check if gangster left
     bool gangsterInGame = true;
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        if (obj_players[i].getRole() == "gangster" && obj_players[i].getAlive() == false)
+        if (obj_players[i]->getRole() == "gangster" && obj_players[i]->getAlive() == false)
         {
             gangsterInGame = false;
         }
@@ -182,9 +178,9 @@ void checkEndCondition()
 
     // check if players are 2
     int playerCount = 0;
-    for (int k = 0; k < 7; k++)
-    {   
-        if (obj_players[k].getAlive() == true)
+    for (int k = 0; k < obj_players.size(); k++)
+    {
+        if (obj_players[k]->getAlive() == true)
         {
             playerCount++;
         }
@@ -201,9 +197,9 @@ void checkEndCondition()
 void checkDocInGame()
 {
     bool found = false;
-    for (int i = 0; i <= 6; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        if (obj_players[i].getRole() == "doctor" && obj_players[i].getAlive() == true)
+        if (obj_players[i]->getRole() == "doctor" && obj_players[i]->getAlive() == true)
         {
             found = true;
         }
@@ -302,11 +298,11 @@ void infoMenu()
 
 void showPlayersForVote()
 {
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < obj_players.size(); i++)
     {
-        if (obj_players[i].getAlive() == true)
+        if (obj_players[i]->getAlive() == true)
         {
-            cout << obj_players[i].getID() << " - " << obj_players[i].getName() << endl;
+            cout << obj_players[i]->getID() << " - " << obj_players[i]->getName() << endl;
         }
     }
 }
@@ -317,17 +313,17 @@ void showPlayersRepeatVote()
     for (int i = 0; i < repeatVoteIDs.size(); i++)
     {
         pID = repeatVoteIDs[i];
-        if (obj_players[pID].getAlive() == true)
+        if (obj_players[pID]->getAlive() == true)
         {
-            cout << obj_players[pID].getID() << " - " << obj_players[pID].getName() << endl;
+            cout << obj_players[pID]->getID() << " - " << obj_players[pID]->getName() << endl;
         }
     }
 }
 
 int gangChoose()
 {
-    string killedNumStr; //player input
-    int index; //player input after conversion
+    string killedNumStr; // player input
+    int index;           // player input after conversion
 
     // input & checking
     while (true)
@@ -337,7 +333,7 @@ int gangChoose()
 
         getline(cin, killedNumStr);
 
-        //validate input
+        // validate input
         try
         {
             if (killedNumStr.size() - 1 != 0)
@@ -347,11 +343,11 @@ int gangChoose()
             else
             {
                 index = stoi(killedNumStr);
-                if (index > 6 || index < 0)
+                if (index > obj_players.size() || index < 0)
                 {
                     throw 02;
                 }
-                if (obj_players[index].getAlive() == false)
+                if (obj_players[index]->getAlive() == false)
                 {
                     throw 03;
                 }
@@ -366,7 +362,7 @@ int gangChoose()
             continue;
         }
 
-        if (obj_players[index].getRole() == "gangster")
+        if (obj_players[index]->getRole() == "gangster")
         {
             cout << "gangster, you can't remove yourself! " << endl;
             cin.clear();
@@ -399,12 +395,12 @@ int docChoose()
             else
             {
                 index = stoi(savedNumStr);
-                if (index > 6 || index < 0)
+                if (index > obj_players.size() || index < 0)
                 {
                     throw 02;
                 }
 
-                if (obj_players[index].getAlive() == false)
+                if (obj_players[index]->getAlive() == false)
                 {
                     throw 03;
                 }
@@ -426,7 +422,7 @@ int docChoose()
 void night()
 {
     cout << "\n\n\n\n\n\n\n\n\nNight falls in Salem...\nThe gangster is " << gangster << endl;
-    
+
     killedNum = gangChoose();
 
     if (docAlive)
@@ -434,11 +430,11 @@ void night()
 
         savedNum = docChoose();
 
-        cout << "\nthe gangster kills " << obj_players[killedNum].getName() 
-             << ", \nthe doctor saves " << obj_players[savedNum].getName() << endl;
+        cout << "\nthe gangster kills " << obj_players[killedNum]->getName()
+             << ", \nthe doctor saves " << obj_players[savedNum]->getName() << endl;
 
         // if doc is the victim and he didnt save himself
-        if (obj_players[killedNum].getRole() == "doctor" && obj_players[savedNum].getRole() != "doctor")
+        if (obj_players[killedNum]->getRole() == "doctor" && obj_players[savedNum]->getRole() != "doctor")
         {
             docAlive = 0;
             changePlayerStatus(killedNum);
@@ -449,17 +445,16 @@ void night()
         if (killedNum - savedNum != 0)
         {
             changePlayerStatus(killedNum);
-            last_killed = obj_players[killedNum].getName();
-            last_left = obj_players[killedNum].getName();
+            last_killed = obj_players[killedNum]->getName();
+            last_left = obj_players[killedNum]->getName();
         }
-
     }
     else if (!docAlive)
     {
-        cout << "\nthe gangster kills " << obj_players[killedNum].getName() << endl;
+        cout << "\nthe gangster kills " << obj_players[killedNum]->getName() << endl;
         changePlayerStatus(killedNum);
-        last_killed = obj_players[killedNum].getName();
-        last_left = obj_players[killedNum].getName();
+        last_killed = obj_players[killedNum]->getName();
+        last_left = obj_players[killedNum]->getName();
     }
 
     checkEndCondition();
@@ -473,76 +468,67 @@ void repeatVoting()
     resetAllCurrentVotes();
 
     // asking players to vote
-    for (int voter = 0; voter <= 6; voter++)
-    {   
-        if(obj_players[voter].getAlive() == true)
+    for (int voter = 0; voter < obj_players.size(); voter++)
+    {
+        if (obj_players[voter]->getAlive() == true)
         {
-            //get voteIndex - the ID of the player they voted for
-            while(true)
+            // get voteIndex - the ID of the player they voted for
+            while (true)
             {
                 showPlayersRepeatVote();
-                voteIndex = obj_players[voter].vote();
+                voteIndex = obj_players[voter]->vote();
 
                 try
                 {
-                    if (obj_players[voteIndex].getAlive() == false) { throw 3; }
-                    if ( !binary_search(repeatVoteIDs.begin(), repeatVoteIDs.end(), voteIndex) ) { throw 4; }
+                    if (obj_players[voteIndex]->getAlive() == false)
+                    {
+                        throw 3;
+                    }
+                    if (!binary_search(repeatVoteIDs.begin(), repeatVoteIDs.end(), voteIndex))
+                    {
+                        throw 4;
+                    }
                 }
-                catch(...)
+                catch (...)
                 {
                     cout << "invalid input, please choose one of the following: " << endl;
                     cin.clear();
                     continue;
                 }
-                
+
                 break;
             }
 
-            //increase current votes of the player voted for
-            obj_players[voteIndex].gotVoted();
+            // increase current votes of the player voted for
+            obj_players[voteIndex]->gotVoted();
         }
     }
-    
-   // print vote board
-    cout << "\n----------------------------------\nPLAYER NAME : VOTES" << endl;
-    for (int k = 0; k <= 6; k++)
-    {
-        if (obj_players[k].getAlive() == true)
-        {
-            if ( binary_search(repeatVoteIDs.begin(), repeatVoteIDs.end(), k) ) //since k = id
-            {
-                cout << "   " << obj_players[k].getName() << " : " 
-                     << obj_players[k].getCurrentVotes() << endl;
-            }       
-        }
-    }
-    cout << "\n----------------------------------\n"
-         << endl;
 
+    showVoteTable();
 
-    //create a vector that stores the votes of player j in element j
-    vector<int> repeatVotes{0, 0, 0, 0, 0, 0, 0};
-    for (int j = 0; j <= 6; j++)
+    // create a vector that stores the votes of player j in element j
+    vector<int> repeatVotes(obj_players.size(), 0);
+    for (int j = 0; j < obj_players.size(); j++)
     {
-        repeatVotes[j] = obj_players[j].getCurrentVotes();
+        repeatVotes[j] = obj_players[j]->getCurrentVotes();
     }
 
     // finding the max
     int max = -1;
     int votedOut_ID;
 
-    for (int z = 0; z <= 6 ; z++)
+    for (int z = 0; z < obj_players.size(); z++)
     {
         if (repeatVotes[z] > max)
         {
             max = repeatVotes[z];
-            votedOut_ID = obj_players[z].getID();
+            votedOut_ID = obj_players[z]->getID();
         }
     }
 
     // checking for equal votes, this time if there are some equal to the max, nobody leaves
     int maxCounter = 0;
-    for (int k = 0; k <= 6; k++)
+    for (int k = 0; k < obj_players.size(); k++)
     {
         if (repeatVotes[k] == max)
         {
@@ -553,17 +539,15 @@ void repeatVoting()
     if (maxCounter > 1)
     {
         cout << "nobody leaves \n";
-
     }
     else
     {
         changePlayerStatus(votedOut_ID);
-        last_voted = obj_players[votedOut_ID].getName();
-        last_left = obj_players[votedOut_ID].getName();
+        last_voted = obj_players[votedOut_ID]->getName();
+        last_left = obj_players[votedOut_ID]->getName();
     }
 
     repeatVotes.clear();
-    
 }
 
 void mainVoting()
@@ -575,57 +559,52 @@ void mainVoting()
     resetAllCurrentVotes();
 
     // asking players to vote
-    for (int voter = 0; voter <= 6; voter++)
-    {   
-        if(obj_players[voter].getAlive() == true)
+    for (int voter = 0; voter < obj_players.size(); voter++)
+    {
+        if (obj_players[voter]->getAlive() == true)
         {
             activePlayers++;
-            //get voteIndex - the ID of the player they voted for
-            while(true)
+            // get voteIndex - the ID of the player they voted for
+            while (true)
             {
                 showPlayersForVote();
-                voteIndex = obj_players[voter].vote();
+                voteIndex = obj_players[voter]->vote();
 
                 try
                 {
-                    if (obj_players[voteIndex].getAlive() == false) { throw 3; } 
+                    if (voteIndex > obj_players.size() - 1)
+                    {
+                        throw 2;
+                    }
+                    if (obj_players[voteIndex]->getAlive() == false)
+                    {
+                        throw 3;
+                    }
                 }
-                catch(...)
+                catch (...)
                 {
                     cout << "invalid input, please choose one of the following: " << endl;
                     cin.clear();
                     continue;
                 }
-                
+
                 break;
             }
 
-            //increase current votes of the player voted for
-            obj_players[voteIndex].gotVoted();
+            // increase current votes of the player voted for
+            obj_players[voteIndex]->gotVoted();
         }
     }
-    
-    // print vote board
-    cout << "\n----------------------------------\nPLAYER NAME : VOTES" << endl;
-    for (int k = 0; k <= 6; k++)
-    {
-        if (obj_players[k].getAlive() == true)
-        {
-            cout << "   " << obj_players[k].getName() << " : " 
-                << obj_players[k].getCurrentVotes() << endl;
-        }
-    }
-    cout << "\n----------------------------------\n"
-         << endl;
 
+    showVoteTable();
 
-    //create a vector that stores the votes of player j in element j
-    vector<int> votes{0, 0, 0, 0, 0, 0, 0};
-    for (int j = 0; j <= 6; j++)
+    // create a vector that stores the votes of player j in element j
+    vector<int> votes(obj_players.size(), 0);
+    for (int j = 0; j < obj_players.size(); j++)
     {
-        if (obj_players[j].getAlive() == true)
+        if (obj_players[j]->getAlive() == true)
         {
-            votes[j] = obj_players[j].getCurrentVotes();
+            votes[j] = obj_players[j]->getCurrentVotes();
         }
     }
 
@@ -633,7 +612,7 @@ void mainVoting()
     int max = -1;
     int votedOut_ID;
 
-    for (int z = 0; z <= 6; z++)
+    for (int z = 0; z < obj_players.size(); z++)
     {
         if (votes[z] > max)
         {
@@ -645,12 +624,12 @@ void mainVoting()
     // checking if some have equal votes
     int maxCounter = 0;
     repeatVoteIDs.clear(); // making sure the repeat voting members vector is empty
-    for (int k = 0; k <= 6; k++)
+    for (int k = 0; k < obj_players.size(); k++)
     {
         if (votes[k] == max)
         {
             maxCounter += 1;
-            repeatVoteIDs.push_back(obj_players[k].getID()); // when i find someone with equal votes to the max i keep them here
+            repeatVoteIDs.push_back(obj_players[k]->getID()); // when i find someone with equal votes to the max i keep them here
         }
     }
 
@@ -665,8 +644,8 @@ void mainVoting()
     else
     {
         changePlayerStatus(votedOut_ID);
-        last_voted = obj_players[votedOut_ID].getName();
-        last_left = obj_players[votedOut_ID].getName();
+        last_voted = obj_players[votedOut_ID]->getName();
+        last_left = obj_players[votedOut_ID]->getName();
     }
 
     cout << "the voting is over\n";
@@ -707,7 +686,7 @@ void gameLoop()
 
 int main()
 {
-    createPlayers();
+    srand(time(NULL));
     initialize();
     gameLoop(); // info-menu, night, day, info-menu, night, day,...
 
