@@ -2,7 +2,7 @@
 a little town of salem - like game based on my assignments from a university course
 
 
-In this game 7 players participate, each with a role. The roles are: 1) Citizen 2) Doctor 3) Gangster.
+In this game players participate, each with a role. The roles are: 1) Citizen 2) Doctor 3) Gangster.
 In the beginning of the game a role and a name is assigned to each player using a txt file. There is one doctor, one
 gangster and the rest are citizens. Tha game is split into 2 phases, day and night.
 In the night phase, the citizens are “asleep“ and the gangster selects which player has to leave (lose).
